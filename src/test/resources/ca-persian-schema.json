@@ -1,0 +1,277 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Persian Calendar CLDR JSON Schema (Flexible)",
+  "type": "object",
+  "properties": {
+    "main": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-zA-Z]{2,3}(-[a-zA-Z0-9]+)*$": {
+          "type": "object",
+          "properties": {
+            "identity": {
+              "type": "object",
+              "properties": {
+                "language": { "type": "string" },
+                "territory": { "type": "string" }
+              },
+              "required": ["language"],
+              "additionalProperties": true
+            },
+            "dates": {
+              "type": "object",
+              "properties": {
+                "calendars": {
+                  "type": "object",
+                  "properties": {
+                    "persian": {
+                      "type": "object",
+                      "properties": {
+                        "months": {
+                          "type": "object",
+                          "properties": {
+                            "format": { "$ref": "#/definitions/monthContext" },
+                            "stand-alone": { "$ref": "#/definitions/monthContext" }
+                          },
+                          "required": ["format", "stand-alone"],
+                          "additionalProperties": true
+                        },
+                        "days": {
+                          "type": "object",
+                          "properties": {
+                            "format": { "$ref": "#/definitions/dayContext" },
+                            "stand-alone": { "$ref": "#/definitions/dayContext" }
+                          },
+                          "required": ["format", "stand-alone"],
+                          "additionalProperties": true
+                        },
+                        "dayPeriods": {
+                          "type": "object",
+                          "properties": {
+                            "format": { "$ref": "#/definitions/dayPeriodContext" },
+                            "stand-alone": { "$ref": "#/definitions/dayPeriodContext" }
+                          },
+                          "required": ["format", "stand-alone"],
+                          "additionalProperties": true
+                        },
+                        "eras": {
+                          "type": "object",
+                          "properties": {
+                            "eraNames": { "$ref": "#/definitions/eraType" },
+                            "eraAbbr": { "$ref": "#/definitions/eraType" },
+                            "eraNarrow": { "$ref": "#/definitions/eraType" }
+                          },
+                          "required": ["eraNames", "eraAbbr", "eraNarrow"],
+                          "additionalProperties": true
+                        },
+                        "quarters": {
+                          "type": "object",
+                          "properties": {
+                            "format": { "$ref": "#/definitions/quarterContext" },
+                            "stand-alone": { "$ref": "#/definitions/quarterContext" }
+                          },
+                          "required": ["format", "stand-alone"],
+                          "additionalProperties": true
+                        },
+                        "dateFormats": { "$ref": "#/definitions/formatType" },
+                        "dateSkeletons": { "$ref": "#/definitions/formatType" },
+                        "timeFormats": { "$ref": "#/definitions/timeFormatType" },
+                        "timeSkeletons": { "$ref": "#/definitions/formatType" },
+                        "dateTimeFormats": {
+                          "type": "object",
+                          "properties": {
+                            "full": { "type": "string" },
+                            "long": { "type": "string" },
+                            "medium": { "type": "string" },
+                            "short": { "type": "string" },
+                            "availableFormats": {
+                              "type": "object",
+                              "additionalProperties": { "type": "string" }
+                            },
+                            "appendItems": {
+                              "type": "object",
+                              "additionalProperties": { "type": "string" }
+                            },
+                            "intervalFormats": {
+                              "type": "object",
+                              "properties": {
+                                "intervalFormatFallback": { "type": "string" }
+                              },
+                              "additionalProperties": {
+                                "anyOf": [
+                                  { "type": "object", "additionalProperties": { "type": "string" } },
+                                  { "type": "string" }
+                                ]
+                              }
+                            }
+                          },
+                          "required": ["full", "long", "medium", "short", "availableFormats", "appendItems", "intervalFormats"],
+                          "additionalProperties": true
+                        },
+                        "dateTimeFormats-atTime": {
+                          "type": "object",
+                          "properties": {
+                            "standard": {
+                              "type": "object",
+                              "properties": {
+                                "full": { "type": "string" },
+                                "long": { "type": "string" },
+                                "medium": { "type": "string" },
+                                "short": { "type": "string" }
+                              },
+                              "required": ["full", "long", "medium", "short"],
+                              "additionalProperties": true
+                            }
+                          },
+                          "required": ["standard"],
+                          "additionalProperties": true
+                        }
+                      },
+                      "required": ["months", "days", "dayPeriods", "eras"],
+                      "additionalProperties": true
+                    }
+                  },
+                  "required": ["persian"],
+                  "additionalProperties": true
+                }
+              },
+              "required": ["calendars"],
+              "additionalProperties": true
+            }
+          },
+          "required": ["identity", "dates"],
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["main"],
+  "definitions": {
+    "monthContext": {
+      "type": "object",
+      "properties": {
+        "abbreviated": { "$ref": "#/definitions/monthsType" },
+        "narrow": { "$ref": "#/definitions/monthsType" },
+        "wide": { "$ref": "#/definitions/monthsType" }
+      },
+      "required": ["abbreviated", "narrow", "wide"]
+    },
+    "monthsType": {
+      "type": "object",
+      "properties": {
+        "1": { "type": "string" },
+        "2": { "type": "string" },
+        "3": { "type": "string" },
+        "4": { "type": "string" },
+        "5": { "type": "string" },
+        "6": { "type": "string" },
+        "7": { "type": "string" },
+        "8": { "type": "string" },
+        "9": { "type": "string" },
+        "10": { "type": "string" },
+        "11": { "type": "string" },
+        "12": { "type": "string" }
+      },
+      "required": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
+    },
+    "dayContext": {
+      "type": "object",
+      "properties": {
+        "abbreviated": { "$ref": "#/definitions/daysType" },
+        "narrow": { "$ref": "#/definitions/daysType" },
+        "short": { "$ref": "#/definitions/daysType" },
+        "wide": { "$ref": "#/definitions/daysType" }
+      },
+      "required": ["abbreviated", "narrow", "short", "wide"]
+    },
+    "daysType": {
+      "type": "object",
+      "properties": {
+        "sun": { "type": "string" },
+        "mon": { "type": "string" },
+        "tue": { "type": "string" },
+        "wed": { "type": "string" },
+        "thu": { "type": "string" },
+        "fri": { "type": "string" },
+        "sat": { "type": "string" }
+      },
+      "required": ["sun", "mon", "tue", "wed", "thu", "fri", "sat"]
+    },
+    "quarterContext": {
+      "type": "object",
+      "properties": {
+        "abbreviated": { "$ref": "#/definitions/quartersType" },
+        "narrow": { "$ref": "#/definitions/quartersType" },
+        "wide": { "$ref": "#/definitions/quartersType" }
+      },
+      "required": ["abbreviated", "narrow", "wide"]
+    },
+    "quartersType": {
+      "type": "object",
+      "properties": {
+        "1": { "type": "string" },
+        "2": { "type": "string" },
+        "3": { "type": "string" },
+        "4": { "type": "string" }
+      },
+      "required": ["1", "2", "3", "4"]
+    },
+    "dayPeriodContext": {
+      "type": "object",
+      "properties": {
+        "abbreviated": { "$ref": "#/definitions/dayPeriodsType" },
+        "narrow": { "$ref": "#/definitions/dayPeriodsType" },
+        "wide": { "$ref": "#/definitions/dayPeriodsType" }
+      },
+      "required": ["abbreviated", "narrow", "wide"]
+    },
+    "dayPeriodsType": {
+      "type": "object",
+      "properties": {
+        "midnight": { "type": "string" },
+        "am": { "type": "string" },
+        "am-alt-variant": { "type": "string" },
+        "noon": { "type": "string" },
+        "pm": { "type": "string" },
+        "pm-alt-variant": { "type": "string" },
+        "morning1": { "type": "string" },
+        "afternoon1": { "type": "string" },
+        "evening1": { "type": "string" },
+        "night1": { "type": "string" }
+      },
+      "required": ["am", "pm"]
+    },
+    "eraType": {
+      "type": "object",
+      "properties": {
+        "0": { "type": "string" }
+      },
+      "required": ["0"]
+    },
+    "formatType": {
+      "type": "object",
+      "properties": {
+        "full": { "type": "string" },
+        "long": { "type": "string" },
+        "medium": { "type": "string" },
+        "short": { "type": "string" }
+      },
+      "required": ["full", "long", "medium", "short"]
+    },
+    "timeFormatType": {
+      "type": "object",
+      "properties": {
+        "full": { "type": "string" },
+        "full-alt-ascii": { "type": "string" },
+        "long": { "type": "string" },
+        "long-alt-ascii": { "type": "string" },
+        "medium": { "type": "string" },
+        "medium-alt-ascii": { "type": "string" },
+        "short": { "type": "string" },
+        "short-alt-ascii": { "type": "string" }
+      },
+      "required": ["full", "long", "medium", "short"]
+    }
+  }
+}
