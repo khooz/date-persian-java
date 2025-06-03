@@ -27,15 +27,15 @@ public final class Chronology  extends AbstractChronology implements Serializabl
     
     // private static final int PERSIAN_EPOCH_OFFSET = 226899; // Offset for Persian epoch (March 20, 622)
     // static final int PERSIAN_EPOCH_OFFSET = 492268; // Offset for Persian epoch (March 20, 622)
-    static final long PERSIAN_EPOCH_OFFSET = Era.UNIX_EPOCH.until(Era.EPOCH, ChronoUnit.DAYS); // Offset for Persian epoch (March 20, 622)
-    static final int PERSIAN_MONTHS_IN_YEAR = 12; // Number of months in a Persian year
-    static final int PERSIAN_DAYS_IN_MONTH = 31; // Maximum days in a month in the Persian calendar
-    static final int PERSIAN_DAYS_IN_SHORT_MONTH = 30; // Days in a short month in the Persian calendar
-    static final int PERSIAN_DAYS_IN_LONG_MONTH = 31; // Days in a long month in the Persian calendar
-    // private static final int PERSIAN_DAYS_IN_YEAR = 365; // Days in a non-leap Persian year
-    static final int PERSIAN_DAYS_IN_LEAP_YEAR = 366; // Days in a leap Persian year
-    static final double PERSIAN_YEAR_LENGTH_DAYS = 365.24219858156028368; // Average length of a Persian year in days
-    static final double PERSIAN_LEAP_YEAR_FRACTION = 0.24219858156028368; // Fraction for leap year calculation
+    public static final long PERSIAN_EPOCH_OFFSET = Era.UNIX_EPOCH.until(Era.EPOCH, ChronoUnit.DAYS); // Offset for Persian epoch (March 20, 622)
+    public static final int PERSIAN_MONTHS_IN_YEAR = 12; // Number of months in a Persian year
+    public static final int PERSIAN_DAYS_IN_MONTH = 31; // Maximum days in a month in the Persian calendar
+    public static final int PERSIAN_DAYS_IN_SHORT_MONTH = 30; // Days in a short month in the Persian calendar
+    public static final int PERSIAN_DAYS_IN_LONG_MONTH = 31; // Days in a long month in the Persian calendar
+    public static final int PERSIAN_DAYS_IN_YEAR = 365; // Days in a non-leap Persian year
+    public static final int PERSIAN_DAYS_IN_LEAP_YEAR = 366; // Days in a leap Persian year
+    public static final double PERSIAN_YEAR_LENGTH_DAYS = 365.24219858156028368; // Average length of a Persian year in days
+    public static final double PERSIAN_LEAP_YEAR_FRACTION = 0.24219858156028368; // Fraction for leap year calculation
     /**
      * Private constructor to prevent instantiation.
      * Use {@link #INSTANCE} to access the singleton instance.
@@ -85,9 +85,9 @@ public final class Chronology  extends AbstractChronology implements Serializabl
 
     private int adjustYearToEpochDay(long epochDay, int year) {
         while (true) {
-            long yearStartEpochDay = persianEpochDayAtStartOfYear(year);
+            long yearStartEpochDay = LocalDate.of(year, 1, 1).toEpochDay();
             int yearLength = isLeapYear(year) ? 366 : 365;
-            long daysInYear = epochDay - yearStartEpochDay + 1;
+            long daysInYear = epochDay - yearStartEpochDay;
             if (daysInYear < 0) {
                 year--;
             } else if (daysInYear >= yearLength) {
@@ -100,22 +100,19 @@ public final class Chronology  extends AbstractChronology implements Serializabl
     }
 
     private int[] calculateMonthAndDay(long epochDay, int year) {
-        // long yearStartEpochDay = persianEpochDayAtStartOfYear(year);
-        // long daysSinceEpoch = epochDay - PERSIAN_EPOCH_OFFSET;
-        long yearStartEpochDay = persianYearStartEpochDay(year);
-        // long daysSinceEpoch = epochDay - PERSIAN_EPOCH_OFFSET;
-        // int year2 = 1 + (int) (daysSinceEpoch / PERSIAN_YEAR_LENGTH_DAYS);
-        // long yearStartEpochDay = daysSinceEpoch - (int) ((year2 - 1) * PERSIAN_YEAR_LENGTH_DAYS);
-        long daysInYear = epochDay - yearStartEpochDay;
-        // long daysInYear = daysSinceEpoch - (int) ((year2 - 1) * PERSIAN_YEAR_LENGTH_DAYS);
+        long yearStartEpochDay = LocalDate.of(year, 1, 1).toEpochDay();
+        long daysInYear = epochDay - yearStartEpochDay + 1;
         int month;
         int dayOfMonth;
         if (daysInYear < 186) {
             month = (int) (daysInYear / 31) + 1;
             dayOfMonth = (int) daysInYear - (month - 1) * 31;
-        } else {
+        } else if (daysInYear < 336) {
             month = (int) ((daysInYear - 186) / 30) + 7;
             dayOfMonth = (int) ((daysInYear - 186) - (month - 7) * 30);
+        } else {
+            month = 12;
+            dayOfMonth = (int) (daysInYear - 336);
         }
         return new int[]{month, dayOfMonth};
     }
@@ -138,16 +135,6 @@ public final class Chronology  extends AbstractChronology implements Serializabl
         if (year < -9999 || year > 9999) {
             throw new DateTimeException("Year out of range: " + year);
         }
-    }
-
-    /**
-     * Returns the epoch day at the start of the given Persian year.
-     */
-    private long persianEpochDayAtStartOfYear(int year) {
-        // Calculate the number of leap years since epoch
-        long y = year - 1L;
-        long leapDays = y / 33 * 8 + ((y % 33 + 3) * 682) / 2816;
-        return PERSIAN_EPOCH_OFFSET + y * 365L + leapDays + 1;
     }
 
     @Override
@@ -258,74 +245,6 @@ public final class Chronology  extends AbstractChronology implements Serializabl
             }
             default -> throw new DateTimeException("Unknown resolver style: " + resolverStyle);
         };
-    }
-
-
-    // The Persian epoch: the Julian Day Number for 1 Farvardin 1.
-    // Note: Some sources use 1948320.5. Here, we use the integer part.
-    private static final int PERSIAN_EPOCH = 1948320;
-
-    /**
-     * Converts a Persian date to its Julian Day Number (JDN).
-     *
-     * @param persianYear  the Persian year
-     * @param persianMonth the Persian month (1-12)
-     * @param persianDay   the Persian day (1-31, depending on the month)
-     * @return the Julian Day Number corresponding to the Persian date
-     */
-    public static long persianToJdn(int persianYear, int persianMonth, int persianDay) {
-        // Adjust for the 2820-year cycle.
-        int epbase = persianYear - ((persianYear >= 0) ? 474 : 473);
-        int epyear = 474 + (epbase % 2820);
-
-        // Total days for the months preceding the given month.
-        // In the Persian calendar:
-        // - Months 1-7 each have 31 days,
-        // - Months 8-11 each have 30 days, with a bonus 6 days from the 7×31 part.
-        int monthDays = (persianMonth <= 7)
-                ? (persianMonth - 1) * 31
-                : ((persianMonth - 1) * 30 + 6);
-
-        // Compute the Julian Day Number using the formula.
-        long jdn = persianDay
-                + monthDays
-                + (int) Math.floor(((epyear * 682.0) - 110.0) / 2816.0)
-                + (epyear - 1) * 365
-                + (long) Math.floor(epbase / 2820.0) * 1029983
-                + (PERSIAN_EPOCH - 1);
-        return jdn;
-    }
-
-    /**
-     * Returns the epoch day (days since 1970-01-01) for 1 Farvardin (the first day)
-     * of the given Persian year.
-     *
-     * @param persianYear the Persian year for which to compute the start epoch day
-     * @return the epoch day for 1 Farvardin of the given year
-     */
-    public static long persianYearStartEpochDay(int persianYear) {
-        // For the start of the year, month = 1 and day = 1.
-        long jdn = persianToJdn(persianYear, 1, 1);
-        // Unix epoch (1970-01-01) corresponds to JDN 2440588.
-        long epochDay = jdn - 2440588L;
-        return epochDay;
-    }
-    
-    /**
-     * Determines whether a given Persian year is a leap year.
-     * This uses the same cycle computation as in the JDN conversion.
-     *
-     * @param persianYear the Persian year
-     * @return true if it is a leap year, false otherwise
-     */
-    public static boolean isPersianLeapYear(int persianYear) {
-        int epbase = persianYear - ((persianYear >= 0) ? 474 : 473);
-        int epyear = 474 + (epbase % 2820);
-        
-        // One common test: in this cycle, if the remainder ((epyear * 682) - 110) mod 2816 is less than 682,
-        // then the year is a leap year.
-        int r = ((epyear * 682) - 110) % 2816;
-        return r < 682;
     }
 
 }

@@ -27,31 +27,13 @@ class ChronologyTest {
         java.time.LocalDate dateLeap = java.time.LocalDate.of(2025, 3, 20);
         java.time.LocalDate epochDate = java.time.LocalDate.of(1970, 1, 1);
         LocalDate persianDate = new LocalDate(1404, 1, 1);
-        LocalDate persianLeapDate = new LocalDate(1402, 12, 30);
+        LocalDate persianLeapDate = new LocalDate(1403, 12, 30);
         LocalDate persianEpochDate = new LocalDate(1348, 10, 11);
         LocalDate convertedDate = Chronology.INSTANCE.date(date);
-        // LocalDate convertedEpochDate = Chronology.INSTANCE.date(epochDate);
-        // LocalDate convertedLeapDate = Chronology.INSTANCE.date(dateLeap);
+        LocalDate convertedEpochDate = Chronology.INSTANCE.date(epochDate);
+        LocalDate convertedLeapDate = Chronology.INSTANCE.date(dateLeap);
         Assertions.assertEquals(convertedDate, persianDate);
-        // Assertions.assertEquals(convertedEpochDate, persianEpochDate);
-        // Assertions.assertEquals(convertedLeapDate, persianLeapDate);
+        Assertions.assertEquals(convertedEpochDate, persianEpochDate);
+        Assertions.assertEquals(convertedLeapDate, persianLeapDate);
     }
-
-    // @Test
-    // void testDateInvalidYear() {
-    //     Assertions.assertThrows(IllegalArgumentException.class, () -> Chronology.INSTANCE.date(0, 1, 1));
-    //     Assertions.assertThrows(IllegalArgumentException.class, () -> Chronology.INSTANCE.date(10000, 1, 1));
-    // }
-
-    // @Test
-    // void testDateInvalidMonth() {
-    //     Assertions.assertThrows(IllegalArgumentException.class, () -> Chronology.INSTANCE.date(1403, 0, 1));
-    //     Assertions.assertThrows(IllegalArgumentException.class, () -> Chronology.INSTANCE.date(1403, 13, 1));
-    // }
-
-    // @Test
-    // void testDateInvalidDay() {
-    //     Assertions.assertThrows(IllegalArgumentException.class, () -> Chronology.INSTANCE.date(1403, 1, 0));
-    //     Assertions.assertThrows(IllegalArgumentException.class, () -> Chronology.INSTANCE.date(1403, 1, 32));
-    // }
 }
