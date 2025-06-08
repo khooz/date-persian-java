@@ -15,10 +15,8 @@ class ChronologyTest {
         Assertions.assertEquals(1, date.get(ChronoField.MONTH_OF_YEAR));
         Assertions.assertEquals(1, date.get(ChronoField.DAY_OF_MONTH));
 
-        LocalDate dateEdge = Chronology.INSTANCE.date(1, 12, 31);
-        Assertions.assertEquals(1, dateEdge.get(ChronoField.YEAR));
-        Assertions.assertEquals(12, dateEdge.get(ChronoField.MONTH_OF_YEAR));
-        Assertions.assertEquals(31, dateEdge.get(ChronoField.DAY_OF_MONTH));
+        var ex = Assertions.assertThrows(IllegalArgumentException.class, () -> Chronology.INSTANCE.date(1, 12, 31));
+        Assertions.assertTrue(ex.getMessage().startsWith("Invalid date"));
     }
 
     @Test
@@ -26,9 +24,9 @@ class ChronologyTest {
         java.time.LocalDate date = java.time.LocalDate.of(2025, 3, 21);
         java.time.LocalDate dateLeap = java.time.LocalDate.of(2025, 3, 20);
         java.time.LocalDate epochDate = java.time.LocalDate.of(1970, 1, 1);
-        LocalDate persianDate = new LocalDate(1404, 1, 1);
-        LocalDate persianLeapDate = new LocalDate(1403, 12, 30);
-        LocalDate persianEpochDate = new LocalDate(1348, 10, 11);
+        LocalDate persianDate = LocalDate.of(1404, 1, 1);
+        LocalDate persianLeapDate = LocalDate.of(1403, 12, 30);
+        LocalDate persianEpochDate = LocalDate.of(1348, 10, 11);
         LocalDate convertedDate = Chronology.INSTANCE.date(date);
         LocalDate convertedEpochDate = Chronology.INSTANCE.date(epochDate);
         LocalDate convertedLeapDate = Chronology.INSTANCE.date(dateLeap);

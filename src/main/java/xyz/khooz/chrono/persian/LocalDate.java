@@ -1,13 +1,19 @@
 package xyz.khooz.chrono.persian;
 
 import java.time.Clock;
+import java.time.DateTimeException;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.ChronoPeriod;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
+import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
+import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.ValueRange;
 import java.util.Objects;
@@ -19,13 +25,13 @@ public class LocalDate implements ChronoLocalDate {
     final int month; // 1-12
     final int day; // 1-31
 
-    public LocalDate(int year, int month, int day) {
+    private LocalDate(int year, int month, int day) {
         this.year = year;
         this.month = month;
         this.day = day;
     }
 
-    public LocalDate(long year, int month, int day) {
+    private LocalDate(long year, int month, int day) {
         this.year = year;
         this.month = month;
         this.day = day;
@@ -303,7 +309,7 @@ public class LocalDate implements ChronoLocalDate {
         if (epochCompare != 0) {
             return epochCompare;
         }
-        return getChronology().compareTo(other.getChronology());
+        return getChronology().getId().compareTo(other.getChronology().getId());
     }
 
     @Override
@@ -311,11 +317,10 @@ public class LocalDate implements ChronoLocalDate {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof LocalDate other)) {
+        if (!(obj instanceof ChronoLocalDate other)) {
             return false;
         }
-        return year == other.year && month == other.month && day == other.day 
-                && getChronology().equals(other.getChronology());
+        return compareTo(other) == 0;
     }
 
     @Override
@@ -389,5 +394,77 @@ public class LocalDate implements ChronoLocalDate {
 
     public static LocalDate ofEpochDay(long epochDay) {
         return Chronology.INSTANCE.dateEpochDay(epochDay);
+    }
+
+    /**
+     * Obtains an instance of {@code LocalDate} from a temporal object.
+     * <p>
+     * This obtains a local date based on the specified temporal.
+     * A {@code TemporalAccessor} represents an arbitrary set of date and time information,
+     * which this factory converts to an instance of {@code LocalDate}.
+     * <p>
+     * The conversion uses the {@link TemporalQueries#localDate()} query, which relies
+     * on extracting the {@link ChronoField#EPOCH_DAY EPOCH_DAY} field.
+     * <p>
+     * This method matches the signature of the functional interface {@link TemporalQuery}
+     * allowing it to be used as a query via method reference, {@code LocalDate::from}.
+     *
+     * @param temporal  the temporal object to convert, not null
+     * @return the local date, not null
+     * @throws DateTimeException if unable to convert to a {@code LocalDate}
+     */
+    public static LocalDate from(TemporalAccessor temporal) {
+        Objects.requireNonNull(temporal, "temporal");
+        LocalDate date = temporal.<LocalDate>query(new TemporalQuery<>() {
+        @Override
+        public LocalDate queryFrom(TemporalAccessor temporal) {
+            if (temporal.isSupported(ChronoField.EPOCH_DAY)) {
+                return LocalDate.ofEpochDay(temporal.getLong(ChronoField.EPOCH_DAY));
+            }
+            return null;
+        }
+
+        @Override
+        public String toString() {
+            return "LocalDate";
+        }
+    });
+        if (date == null) {
+            throw new DateTimeException("Unable to obtain LocalDate from TemporalAccessor: " +
+                    temporal + " of type " + temporal.getClass().getName());
+        }
+        return date;
+    }
+
+    /**
+     * Obtains an instance of {@code LocalDate} from a text string using a specific formatter.
+     * <p>
+     * The text is parsed using the formatter, returning a date.
+     *
+     * @param text  the text to parse, not null
+     * @param formatter  the formatter to use, not null
+     * @return the parsed local date, not null
+     * @throws DateTimeParseException if the text cannot be parsed
+     */
+    public static LocalDate parse(CharSequence text, DateTimeFormatter formatter) {
+        Objects.requireNonNull(formatter, "formatter");
+        return formatter.<LocalDate>parse(text, LocalDate::from);
+    }
+
+    /**
+     * Obtains an instance of {@code LocalDate} from a text string such as {@code 2007-12-03}.
+     * <p>
+     * The string must represent a valid date and is parsed using
+     * {@link java.time.format.DateTimeFormatter#ISO_LOCAL_DATE}.
+     *
+     * @param text  the text to parse such as "2007-12-03", not null
+     * @return the parsed local date, not null
+     * @throws DateTimeParseException if the text cannot be parsed
+     */
+    public static LocalDate parse(CharSequence text) {
+        return parse(text, DateTimeFormatter.ISO_LOCAL_DATE
+            // .withResolverStyle(ResolverStyle.STRICT)
+            // .withChronology(Chronology.INSTANCE)
+        );
     }
 }

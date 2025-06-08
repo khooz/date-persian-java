@@ -75,6 +75,21 @@ public enum Era implements java.time.chrono.Era {
     }
 
     /**
+     * Returns the era corresponding to the specified numeric value.
+     * If the value is not recognized, an {@code IllegalArgumentException} is thrown.
+     *
+     * @param eraValue the numeric value of the era, must be 0 or 1
+     * @return the era corresponding to the value
+     * @throws IllegalArgumentException if the value is not recognized
+     */
+    public static Era of(int eraValue) {
+        if (eraValue < 0 || eraValue >= VALUES.length) {
+            throw new IllegalArgumentException("Invalid era value: " + eraValue);
+        }
+        return (Era) VALUES[eraValue];
+    }
+
+    /**
      * Retrieves the textual representation of this era using the specified style and locale.
      * If a mapping for the locale is not found, it falls back to English.
      *
@@ -127,7 +142,7 @@ public enum Era implements java.time.chrono.Era {
     @Override
     public ValueRange range(java.time.temporal.TemporalField field) {
         if (field == ChronoField.ERA) {
-            return ValueRange.of(0, 1);
+            return ValueRange.of(0, 0);
         }
         throw new UnsupportedOperationException("Unsupported field: " + field);
     }
