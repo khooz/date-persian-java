@@ -27,15 +27,15 @@ public final class Chronology  extends AbstractChronology implements Serializabl
     
     // private static final int PERSIAN_EPOCH_OFFSET = 226899; // Offset for Persian epoch (March 20, 622)
     // static final int PERSIAN_EPOCH_OFFSET = 492268; // Offset for Persian epoch (March 20, 622)
-    static final long PERSIAN_EPOCH_OFFSET = Era.UNIX_EPOCH.until(Era.EPOCH, ChronoUnit.DAYS); // Offset for Persian epoch (March 20, 622)
-    static final int PERSIAN_MONTHS_IN_YEAR = 12; // Number of months in a Persian year
-    static final int PERSIAN_DAYS_IN_MONTH = 31; // Maximum days in a month in the Persian calendar
-    static final int PERSIAN_DAYS_IN_SHORT_MONTH = 30; // Days in a short month in the Persian calendar
-    static final int PERSIAN_DAYS_IN_LONG_MONTH = 31; // Days in a long month in the Persian calendar
-    // private static final int PERSIAN_DAYS_IN_YEAR = 365; // Days in a non-leap Persian year
-    static final int PERSIAN_DAYS_IN_LEAP_YEAR = 366; // Days in a leap Persian year
-    static final double PERSIAN_YEAR_LENGTH_DAYS = 365.24219858156028368; // Average length of a Persian year in days
-    static final double PERSIAN_LEAP_YEAR_FRACTION = 0.24219858156028368; // Fraction for leap year calculation
+    public static final long PERSIAN_EPOCH_OFFSET = Era.UNIX_EPOCH.until(Era.EPOCH, ChronoUnit.DAYS); // Offset for Persian epoch (March 20, 622)
+    public static final int PERSIAN_MONTHS_IN_YEAR = 12; // Number of months in a Persian year
+    public static final int PERSIAN_DAYS_IN_MONTH = 31; // Maximum days in a month in the Persian calendar
+    public static final int PERSIAN_DAYS_IN_SHORT_MONTH = 30; // Days in a short month in the Persian calendar
+    public static final int PERSIAN_DAYS_IN_LONG_MONTH = 31; // Days in a long month in the Persian calendar
+    public static final int PERSIAN_DAYS_IN_YEAR = 365; // Days in a non-leap Persian year
+    public static final int PERSIAN_DAYS_IN_LEAP_YEAR = 366; // Days in a leap Persian year
+    public static final double PERSIAN_YEAR_LENGTH_DAYS = 365.24219858156028368; // Average length of a Persian year in days
+    public static final double PERSIAN_LEAP_YEAR_FRACTION = 0.24219858156028368; // Fraction for leap year calculation
     /**
      * Private constructor to prevent instantiation.
      * Use {@link #INSTANCE} to access the singleton instance.
@@ -54,7 +54,7 @@ public final class Chronology  extends AbstractChronology implements Serializabl
 
     @Override
     public LocalDate date(int prolepticYear, int month, int dayOfMonth) {
-        return new LocalDate(prolepticYear, month, dayOfMonth);
+        return LocalDate.of(prolepticYear, month, dayOfMonth);
     }
 
     @Override
@@ -64,30 +64,77 @@ public final class Chronology  extends AbstractChronology implements Serializabl
         }
         int month = dayOfYear < 186 ? dayOfYear / PERSIAN_DAYS_IN_MONTH + 1 : (dayOfYear - 186) / PERSIAN_DAYS_IN_SHORT_MONTH + 7;
         int dayOfMonth = dayOfYear - (month <= 6 ? (month - 1) * PERSIAN_DAYS_IN_MONTH : (month - 7) * PERSIAN_DAYS_IN_SHORT_MONTH + 186);
-        return new LocalDate(prolepticYear, month, dayOfMonth);
+        return LocalDate.of(prolepticYear, month, dayOfMonth);
     }
 
     @Override
     public LocalDate dateEpochDay(long epochDay) throws DateTimeException {
-        long daysSinceEpoch = epochDay + PERSIAN_EPOCH_OFFSET; // Adjust for Persian epoch (March 20, 622)
-        if (daysSinceEpoch < 0) {
-            throw new DateTimeException("Epoch day must be non-negative");
+        int year = estimateYearFromEpochDay(epochDay);
+        year = adjustYearToEpochDay(epochDay, year);
+        int[] monthDay = calculateMonthAndDay(epochDay, year);
+        int month = monthDay[0];
+        int dayOfMonth = monthDay[1];
+        validatePersianDate(year, month, dayOfMonth);
+        return LocalDate.of(year, month, dayOfMonth);
+    }
+
+    private int estimateYearFromEpochDay(long epochDay) {
+        long daysSinceEpoch = epochDay - PERSIAN_EPOCH_OFFSET;
+        return 1 + (int) (daysSinceEpoch / PERSIAN_YEAR_LENGTH_DAYS);
+    }
+
+    private int adjustYearToEpochDay(long epochDay, int year) {
+        while (true) {
+            long yearStartEpochDay = LocalDate.of(year, 1, 1).toEpochDay();
+            int yearLength = isLeapYear(year) ? 366 : 365;
+            long daysInYear = epochDay - yearStartEpochDay;
+            if (daysInYear < 0) {
+                year--;
+            } else if (daysInYear >= yearLength) {
+                year++;
+            } else {
+                break;
+            }
         }
-        // Calculate the proleptic year, month, and day of month
-        int year = (int) (daysSinceEpoch / PERSIAN_YEAR_LENGTH_DAYS) + 1; // Approximate year calculation
-        int daysInYear = (int) (daysSinceEpoch % PERSIAN_YEAR_LENGTH_DAYS);
-        int month = (daysInYear < 186) ? (daysInYear / PERSIAN_DAYS_IN_MONTH + 1) : ((daysInYear - 186) / PERSIAN_DAYS_IN_SHORT_MONTH + 7);
-        int dayOfMonth = daysInYear - (month <= 6 ? (month - 1) * PERSIAN_DAYS_IN_MONTH : (month - 7) * PERSIAN_DAYS_IN_SHORT_MONTH + 186);
-        if (dayOfMonth < 1 || dayOfMonth > PERSIAN_DAYS_IN_LONG_MONTH) {
-            throw new DateTimeException("Invalid day of month: " + dayOfMonth);
+        return year;
+    }
+
+    private int[] calculateMonthAndDay(long epochDay, int year) {
+        long yearStartEpochDay = LocalDate.of(year, 1, 1).toEpochDay();
+        long daysInYear = epochDay - yearStartEpochDay + 1;
+        int month;
+        int dayOfMonth;
+        if (daysInYear < 186) {
+            month = (int) (daysInYear / 31) + 1;
+            dayOfMonth = (int) daysInYear - (month - 1) * 31;
+        } else if (daysInYear < 336) {
+            month = (int) ((daysInYear - 186) / 30) + 7;
+            dayOfMonth = (int) ((daysInYear - 186) - (month - 7) * 30);
+        } else {
+            month = 12;
+            dayOfMonth = (int) (daysInYear - 336);
         }
-        if (month < 1 || month > PERSIAN_MONTHS_IN_YEAR) {
+        return new int[]{month, dayOfMonth};
+    }
+
+    private void validatePersianDate(int year, int month, int dayOfMonth) {
+        if (month < 1 || month > 12) {
             throw new DateTimeException("Invalid month: " + month);
         }
-        if (year < 1 || year > 9999) {
+        int maxDay;
+        if (month <= 6) {
+            maxDay = 31;
+        } else if (month < 12) {
+            maxDay = 30;
+        } else {
+            maxDay = isLeapYear(year) ? 30 : 29;
+        }
+        if (dayOfMonth < 1 || dayOfMonth > maxDay) {
+            throw new DateTimeException("Invalid day of month: " + dayOfMonth);
+        }
+        if (year < -9999 || year > 9999) {
             throw new DateTimeException("Year out of range: " + year);
         }
-        return new LocalDate(year, month, dayOfMonth);
     }
 
     @Override
@@ -117,6 +164,13 @@ public final class Chronology  extends AbstractChronology implements Serializabl
 
     @Override
     public int prolepticYear(java.time.chrono.Era era, int yearOfEra) {
+        return switch (era) {
+            case Era.HIJRAH -> yearOfEra; // Proleptic year is the same as year of era
+            default -> throw new DateTimeException("Invalid era: " + era);
+        };
+    }
+
+    public long prolepticYear(java.time.chrono.Era era, long yearOfEra) {
         return switch (era) {
             case Era.HIJRAH -> yearOfEra; // Proleptic year is the same as year of era
             default -> throw new DateTimeException("Invalid era: " + era);
@@ -158,27 +212,22 @@ public final class Chronology  extends AbstractChronology implements Serializabl
         if (fieldValues == null || fieldValues.isEmpty()) {
             throw new DateTimeException("Field values cannot be null or empty");
         }
-        if (!fieldValues.containsKey(ChronoField.YEAR) || !fieldValues.containsKey(ChronoField.MONTH_OF_YEAR) || !fieldValues.containsKey(ChronoField.DAY_OF_MONTH)) {
-            throw new DateTimeException("Year, month, and day of month must be provided");
+        long year = resolverExtractYear(fieldValues);
+        if (fieldValues.containsKey(ChronoField.ERA))
+        {
+            Era era = Era.of(Math.toIntExact(fieldValues.get(ChronoField.ERA)));
+            if (era != Era.HIJRAH) {
+                throw new DateTimeException("Unsupported era: " + era);
+            }
         }
-        int year = Math.toIntExact(fieldValues.get(ChronoField.YEAR));
-        int month = Math.toIntExact(fieldValues.get(ChronoField.MONTH_OF_YEAR));
-        int dayOfMonth = Math.toIntExact(fieldValues.get(ChronoField.DAY_OF_MONTH));
-        if (year < 1 || year > 9999) {
-            throw new DateTimeException("Year out of range: " + year);
-        }
-        if (month < 1 || month > 12) {
-            throw new DateTimeException("Month out of range: " + month);
-        }
-        if (dayOfMonth < 1 || dayOfMonth > 31) {
-            throw new DateTimeException("Day of month out of range: " + dayOfMonth);
-        }
-        // Additional validation for month lengths can be added here
-        if ((month == 2 && dayOfMonth > 29) || (month > 2 && dayOfMonth > 31)) {
-            throw new DateTimeException("Invalid day of month for the specified month: " + dayOfMonth);
+        
+        int month = resolverExtractField(fieldValues, ChronoField.MONTH_OF_YEAR);
+        int dayOfMonth = resolverExtractField(fieldValues, ChronoField.DAY_OF_MONTH);
+        if (LocalDate.lengthOfMonth(month, year) < dayOfMonth) {
+            throw new DateTimeException("Day of month out of range for month " + month + ": " + dayOfMonth);
         }
         // Create and return a PersianDate instance
-        LocalDate date = new LocalDate(year, month, dayOfMonth);
+        LocalDate date = LocalDate.of(year, month, dayOfMonth);
         // If resolver style is STRICT, validate the date
         return switch (resolverStyle) {
             case SMART -> {
@@ -199,4 +248,35 @@ public final class Chronology  extends AbstractChronology implements Serializabl
             default -> throw new DateTimeException("Unknown resolver style: " + resolverStyle);
         };
     }
+
+    private int resolverExtractField(Map<TemporalField, Long> fieldValues, ChronoField field) throws DateTimeException {
+        if (!fieldValues.containsKey(field)) {
+            throw new DateTimeException(field.name() + " must be provided");
+        }
+        int value = Math.toIntExact(fieldValues.get(field));
+        if (!INSTANCE.range(field).isValidIntValue(value)) {
+            throw new DateTimeException(field.name() + " out of range: " + value);
+        }
+        return value;
+    }
+
+    private long resolverExtractYear(Map<TemporalField, Long> fieldValues) throws DateTimeException {
+        long year;
+        if (fieldValues.containsKey(ChronoField.YEAR)) {
+            year = Math.toIntExact(fieldValues.get(ChronoField.YEAR));
+            INSTANCE.range(ChronoField.YEAR).isValidIntValue(year);
+        }
+        else if (fieldValues.containsKey(ChronoField.YEAR_OF_ERA)) {
+            year = Math.toIntExact(fieldValues.get(ChronoField.YEAR_OF_ERA));
+            INSTANCE.range(ChronoField.YEAR_OF_ERA).isValidIntValue(year);
+        }
+        else {
+            throw new DateTimeException("Year or year of era must be provided");
+        }
+        if (!INSTANCE.range(ChronoField.YEAR).isValidIntValue(year)) {
+            throw new DateTimeException("Year out of range: " + year);
+        }
+        return year;
+    }
+
 }
