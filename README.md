@@ -20,28 +20,56 @@ A Java library for working with the Persian (Jalali) calendar system, providing 
 
 ### Usage
 
-Add the library to your project and use `xyz.khooz.chrono.persian.LocalDate`:
+Add the library to your project and use `xyz.khooz.chrono.persian.*`:
 
 ```java
 import xyz.khooz.chrono.persian.LocalDate;
+import xyz.khooz.chrono.persian.Chronology;
+import xyz.khooz.chrono.persian.Era;
+```
 
-LocalDate persianDate = new LocalDate(1403, 3, 12);
-System.out.println(persianDate); // Outputs Persian date
+Then use as you would with `java.time.LocalDate`
+
+```java
+LocalDate persianDate = LocalDate.of(1403, 3, 12);
+System.out.println(persianDate); // --> 1403-03-12
 ```
 
 ### Example: Leap Year
 
 ```java
-LocalDate date = new LocalDate(1399, 12, 30);
-boolean isLeap = date.isLeapYear(); // true if 1399 is a leap year
+LocalDate date = LocalDate.of(1399, 12, 30);
+boolean isLeap = date.isLeapYear(); // --> true
 ```
 
-<!-- ### Example: Conversion
+### Example: Conversion
 
 ```java
-LocalDate persianDate = LocalDate.fromIsoDate(java.time.LocalDate.of(2025, 6, 2));
-java.time.LocalDate isoDate = persianDate.toIsoDate();
-``` -->
+LocalDate persianDate = Chronology.INSTANCE.date(java.time.LocalDate.of(2025, 6, 2));
+```
+<!-- java.time.LocalDate isoDate = persianDate.toIsoDate(); -->
+
+### Example: Comparison
+
+```java
+java.time.LocalDate gregorianDate = java.time.LocalDate.of(2025, 3, 20);
+LocalDate persianDate = LocalDate.of(1404, 1, 1);
+persianDate.compareTo(gregorianDate) > 0 // --> true
+persianDate.compareTo(gregorianDate) // --> 1
+persianDate.isAfter(gregorianDate) // --> true
+persianDate.isBefore(gregorianDate) // --> false
+```
+
+### Example: Parsing
+
+```java
+String dateWithEra = "1403-12-30"; 
+DateTimeFormatter formatter = DateTimeFormatter
+    .ofPattern("yyyy-MM-dd")
+    .withChronology(Chronology.INSTANCE)
+;
+LocalDate parsedDate = LocalDate.parse(dateWithEra, formatter);
+```
 
 ## Project Structure
 

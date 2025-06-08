@@ -54,7 +54,7 @@ public final class Chronology  extends AbstractChronology implements Serializabl
 
     @Override
     public LocalDate date(int prolepticYear, int month, int dayOfMonth) {
-        return new LocalDate(prolepticYear, month, dayOfMonth);
+        return LocalDate.of(prolepticYear, month, dayOfMonth);
     }
 
     @Override
@@ -64,7 +64,7 @@ public final class Chronology  extends AbstractChronology implements Serializabl
         }
         int month = dayOfYear < 186 ? dayOfYear / PERSIAN_DAYS_IN_MONTH + 1 : (dayOfYear - 186) / PERSIAN_DAYS_IN_SHORT_MONTH + 7;
         int dayOfMonth = dayOfYear - (month <= 6 ? (month - 1) * PERSIAN_DAYS_IN_MONTH : (month - 7) * PERSIAN_DAYS_IN_SHORT_MONTH + 186);
-        return new LocalDate(prolepticYear, month, dayOfMonth);
+        return LocalDate.of(prolepticYear, month, dayOfMonth);
     }
 
     @Override
@@ -75,7 +75,7 @@ public final class Chronology  extends AbstractChronology implements Serializabl
         int month = monthDay[0];
         int dayOfMonth = monthDay[1];
         validatePersianDate(year, month, dayOfMonth);
-        return new LocalDate(year, month, dayOfMonth);
+        return LocalDate.of(year, month, dayOfMonth);
     }
 
     private int estimateYearFromEpochDay(long epochDay) {
@@ -170,6 +170,13 @@ public final class Chronology  extends AbstractChronology implements Serializabl
         };
     }
 
+    public long prolepticYear(java.time.chrono.Era era, long yearOfEra) {
+        return switch (era) {
+            case Era.HIJRAH -> yearOfEra; // Proleptic year is the same as year of era
+            default -> throw new DateTimeException("Invalid era: " + era);
+        };
+    }
+
     @Override
     public java.time.chrono.Era eraOf(int eraValue) {
         return switch (eraValue) {
@@ -205,27 +212,22 @@ public final class Chronology  extends AbstractChronology implements Serializabl
         if (fieldValues == null || fieldValues.isEmpty()) {
             throw new DateTimeException("Field values cannot be null or empty");
         }
-        if (!fieldValues.containsKey(ChronoField.YEAR) || !fieldValues.containsKey(ChronoField.MONTH_OF_YEAR) || !fieldValues.containsKey(ChronoField.DAY_OF_MONTH)) {
-            throw new DateTimeException("Year, month, and day of month must be provided");
+        long year = resolverExtractYear(fieldValues);
+        if (fieldValues.containsKey(ChronoField.ERA))
+        {
+            Era era = Era.of(Math.toIntExact(fieldValues.get(ChronoField.ERA)));
+            if (era != Era.HIJRAH) {
+                throw new DateTimeException("Unsupported era: " + era);
+            }
         }
-        int year = Math.toIntExact(fieldValues.get(ChronoField.YEAR));
-        int month = Math.toIntExact(fieldValues.get(ChronoField.MONTH_OF_YEAR));
-        int dayOfMonth = Math.toIntExact(fieldValues.get(ChronoField.DAY_OF_MONTH));
-        if (year < 1 || year > 9999) {
-            throw new DateTimeException("Year out of range: " + year);
-        }
-        if (month < 1 || month > 12) {
-            throw new DateTimeException("Month out of range: " + month);
-        }
-        if (dayOfMonth < 1 || dayOfMonth > 31) {
-            throw new DateTimeException("Day of month out of range: " + dayOfMonth);
-        }
-        // Additional validation for month lengths can be added here
-        if ((month == 2 && dayOfMonth > 29) || (month > 2 && dayOfMonth > 31)) {
-            throw new DateTimeException("Invalid day of month for the specified month: " + dayOfMonth);
+        
+        int month = resolverExtractField(fieldValues, ChronoField.MONTH_OF_YEAR);
+        int dayOfMonth = resolverExtractField(fieldValues, ChronoField.DAY_OF_MONTH);
+        if (LocalDate.lengthOfMonth(month, year) < dayOfMonth) {
+            throw new DateTimeException("Day of month out of range for month " + month + ": " + dayOfMonth);
         }
         // Create and return a PersianDate instance
-        LocalDate date = new LocalDate(year, month, dayOfMonth);
+        LocalDate date = LocalDate.of(year, month, dayOfMonth);
         // If resolver style is STRICT, validate the date
         return switch (resolverStyle) {
             case SMART -> {
@@ -245,6 +247,36 @@ public final class Chronology  extends AbstractChronology implements Serializabl
             }
             default -> throw new DateTimeException("Unknown resolver style: " + resolverStyle);
         };
+    }
+
+    private int resolverExtractField(Map<TemporalField, Long> fieldValues, ChronoField field) throws DateTimeException {
+        if (!fieldValues.containsKey(field)) {
+            throw new DateTimeException(field.name() + " must be provided");
+        }
+        int value = Math.toIntExact(fieldValues.get(field));
+        if (!INSTANCE.range(field).isValidIntValue(value)) {
+            throw new DateTimeException(field.name() + " out of range: " + value);
+        }
+        return value;
+    }
+
+    private long resolverExtractYear(Map<TemporalField, Long> fieldValues) throws DateTimeException {
+        long year;
+        if (fieldValues.containsKey(ChronoField.YEAR)) {
+            year = Math.toIntExact(fieldValues.get(ChronoField.YEAR));
+            INSTANCE.range(ChronoField.YEAR).isValidIntValue(year);
+        }
+        else if (fieldValues.containsKey(ChronoField.YEAR_OF_ERA)) {
+            year = Math.toIntExact(fieldValues.get(ChronoField.YEAR_OF_ERA));
+            INSTANCE.range(ChronoField.YEAR_OF_ERA).isValidIntValue(year);
+        }
+        else {
+            throw new DateTimeException("Year or year of era must be provided");
+        }
+        if (!INSTANCE.range(ChronoField.YEAR).isValidIntValue(year)) {
+            throw new DateTimeException("Year out of range: " + year);
+        }
+        return year;
     }
 
 }
